@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>🎉 EKVS - Food Decider 🎉</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.9.3/confetti.browser.min.js"></script>
+<style>
+  :root{
+    --gold:#FFD447;
+    --gold-dark:#E8A600;
+    --prize-red:#E8112D;
+    --hot-pink:#FF2E9F;
+    --deep-purple:#2A0845;
+    --deep-purple-2:#6441A5;
+    --win-green:#17D97A;
+    --dark:#160424;
+    --cream:#FFF6DD;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Baloo 2', sans-serif;
+    background: radial-gradient(circle at 50% 0%, var(--deep-purple-2), var(--deep-purple) 55%, var(--dark) 100%);
+    color:var(--cream);
+    min-height:100vh;
+    padding-bottom:60px;
+  }
+  .display{font-family:'Luckiest Guy', cursive; letter-spacing:1px;}
+
+  /* ---------- Marquee header ---------- */
+  .marquee-wrap{
+    background:repeating-linear-gradient(45deg, var(--prize-red), var(--prize-red) 20px, var(--gold) 20px, var(--gold) 40px);
+    padding:6px 0;
+    overflow:hidden;
+    border-bottom:4px solid #000;
+  }
+  .marquee{
+    display:inline-block;
+    white-space:nowrap;
+    animation: scroll-left 14s linear infinite;
+    font-family:'Luckiest Guy', cursive;
+    color:#000;
+    font-size:15px;
+    text-shadow:1px 1px 0 #fff8;
+  }
+  @keyframes scroll-left{ from{transform:translateX(0);} to{transform:translateX(-50%);} }
+
+  header.hero{
+    text-align:center;
+    padding:34px 16px 22px;
+  }
+  .badge{
+    display:inline-block;
+    background:var(--gold);
+    color:#000;
+    font-weight:800;
+    padding:4px 14px;
+    border-radius:999px;
+    font-size:12px;
+    letter-spacing:1px;
+    box-shadow:0 0 0 3px #000, 0 0 18px 2px var(--gold);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse{ 0%,100%{transform:scale(1);} 50%{transform:scale(1.06);} }
+
+  h1.title{
+    font-size:clamp(32px, 7vw, 58px);
+    margin:14px 0 6px;
+    background:linear-gradient(180deg, var(--gold) 10%, var(--gold-dark) 60%, var(--prize-red) 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    -webkit-text-stroke:2px #000;
+    text-shadow: 0 4px 0 rgba(0,0,0,0.35);
+  }
+  .subtitle{color:var(--cream); opacity:.85; font-size:15px; max-width:520px; margin:0 auto;}
+
+  /* ---------- Tabs ---------- */
+  nav.tabs{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    flex-wrap:wrap;
+    margin:22px 0 10px;
+    padding:0 12px;
+  }
+  nav.tabs button{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:800;
+    font-size:14px;
+    padding:10px 18px;
+    border-radius:12px;
+    border:3px solid #000;
+    background:var(--cream);
+    color:#000;
+    cursor:pointer;
+    box-shadow:0 4px 0 #000;
+    transition: transform .08s ease;
+  }
+  nav.tabs button:active{ transform:translateY(3px); box-shadow:0 1px 0 #000; }
+  nav.tabs button.active{ background:var(--hot-pink); color:#fff; }
+
+  main{ max-width:760px; margin:0 auto; padding:0 16px; }
+  section.panel{ display:none; }
+  section.panel.active{ display:block; }
+
+  /* ---------- Prize ticket card (form container) ---------- */
+  .ticket{
+    background: var(--cream);
+    color:#1a0630;
+    border-radius:18px;
+    border:4px solid #000;
+    box-shadow: 0 8px 0 #000, 0 8px 24px rgba(0,0,0,.4);
+    padding:22px;
+    position:relative;
+    margin-bottom:26px;
+  }
+  .ticket::before, .ticket::after{
+    content:"";
+    position:absolute;
+    width:26px; height:26px;
+    background:var(--deep-purple);
+    border:4px solid #000;
+    border-radius:50%;
+    top:50%; transform:translateY(-50%);
+  }
+  .ticket::before{ left:-17px; }
+  .ticket::after{ right:-17px; }
+
+  label{ display:block; font-weight:700; margin:14px 0 6px; font-size:14px;}
+  input[type=number], input[type=text], select, textarea{
+    width:100%;
+    padding:10px 12px;
+    border-radius:10px;
+    border:3px solid #000;
+    font-family:'Baloo 2', sans-serif;
+    font-size:15px;
+    background:#fff;
+  }
+  textarea{ min-height:60px; resize:vertical; }
+
+  .big-cta{
+    width:100%;
+    margin-top:20px;
+    padding:16px;
+    font-family:'Luckiest Guy', cursive;
+    font-size:22px;
+    letter-spacing:1px;
+    color:#000;
+    background:linear-gradient(180deg, var(--gold), var(--gold-dark));
+    border:4px solid #000;
+    border-radius:14px;
+    box-shadow:0 6px 0 #7a5200;
+    cursor:pointer;
+  }
+  .big-cta:active{ transform:translateY(4px); box-shadow:0 2px 0 #7a5200; }
+  .big-cta:disabled{ opacity:.6; cursor:wait; }
+
+  /* ---------- Wheel spin loading ---------- */
+  .spin-wrap{ text-align:center; margin:26px 0; display:none; }
+  .spin-wrap.show{ display:block; }
+  .wheel{
+    width:90px; height:90px; margin:0 auto 10px;
+    border-radius:50%;
+    border:8px solid var(--gold);
+    border-top-color:var(--prize-red);
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg);} }
+
+  /* ---------- Prize result cards ---------- */
+  .prize-card{
+    background:linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+    border:4px solid #000;
+    border-radius:16px;
+    padding:18px 20px;
+    margin-bottom:16px;
+    color:#000;
+    box-shadow:0 6px 0 #000;
+    position:relative;
+    overflow:hidden;
+  }
+  .prize-card .ribbon{
+    position:absolute; top:10px; right:-34px;
+    background:var(--prize-red); color:#fff;
+    font-weight:800; font-size:11px;
+    padding:4px 40px;
+    transform:rotate(35deg);
+    box-shadow:0 2px 0 #000;
+  }
+  .prize-card h3{ font-family:'Luckiest Guy', cursive; margin:0 0 4px; font-size:22px;}
+  .prize-card .place{ font-weight:800; font-size:14px; opacity:.85; }
+  .prize-card .amount{
+    font-family:'Luckiest Guy', cursive;
+    font-size:30px; color:var(--prize-red);
+    margin:8px 0 4px;
+    text-shadow:1px 1px 0 #fff8;
+  }
+  .claim-btn{
+    margin-top:8px;
+    background:var(--win-green);
+    border:3px solid #000;
+    border-radius:10px;
+    padding:8px 16px;
+    font-weight:800;
+    cursor:pointer;
+    box-shadow:0 3px 0 #0b6b3c;
+  }
+  .claim-btn:active{ transform:translateY(3px); box-shadow:none; }
+  .claim-btn.claimed{ background:#999; cursor:default; }
+
+  /* ---------- Manage tab ---------- */
+  .place-block{
+    background:rgba(255,255,255,0.06);
+    border:2px solid var(--gold);
+    border-radius:14px;
+    padding:14px 16px;
+    margin-bottom:16px;
+  }
+  .place-block h3{ font-family:'Luckiest Guy', cursive; color:var(--gold); margin:2px 0 2px;}
+  .place-meta{ font-size:12px; opacity:.75; margin-bottom:8px;}
+  .item-row{
+    display:flex; justify-content:space-between; align-items:center;
+    background:rgba(0,0,0,0.25);
+    border-radius:8px;
+    padding:6px 10px;
+    margin:6px 0;
+    font-size:14px;
+  }
+  .item-row .price{ color:var(--win-green); font-weight:800; }
+  .row-actions button{
+    background:none; border:none; color:var(--cream); cursor:pointer; font-size:14px; margin-left:6px;
+  }
+  .small-form{ display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .small-form input, .small-form select{ flex:1; min-width:90px; padding:6px 8px; font-size:13px; }
+  .small-form button{
+    background:var(--hot-pink); color:#fff; border:none; border-radius:8px; padding:6px 12px; font-weight:800; cursor:pointer;
+  }
+
+  /* ---------- History tab ---------- */
+  .history-row{
+    display:flex; justify-content:space-between;
+    background:rgba(255,255,255,0.07);
+    border-left:4px solid var(--win-green);
+    border-radius:8px;
+    padding:10px 14px;
+    margin-bottom:8px;
+    font-size:14px;
+  }
+  .history-row .date{ opacity:.6; font-size:12px; }
+
+  .empty{ text-align:center; opacity:.6; padding:30px 10px; font-size:14px; }
+  .status-pill{
+    position:fixed; bottom:14px; right:14px;
+    background:#000; color:var(--gold);
+    padding:6px 12px; border-radius:999px;
+    font-size:12px; font-weight:700;
+    border:2px solid var(--gold);
+    z-index:50;
+  }
+  .syncing {
+    display: inline-block;
+    animation: spin 0.8s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+</style>
+</head>
+<body>
+
+<div class="marquee-wrap">
+  <div class="marquee">🍽️&nbsp; EKVS FOOD DECIDER — DECIDING YOUR NEXT MEAL SO YOU DON'T HAVE TO &nbsp;🍽️&nbsp; ADD YOUR FAVORITE PLACES AND FIND THE PERFECT DISH &nbsp;🍽️&nbsp; EKVS FOOD DECIDER — DECIDING YOUR NEXT MEAL SO YOU DON'T HAVE TO &nbsp;🍽️&nbsp;</div>
+</div>
+
+<header class="hero">
+  <span class="badge">⭐ EKVS MEAL DECIDER ⭐</span>
+  <h1 class="title">EKVS FOOD DECIDER</h1>
+  <p class="subtitle">Enter your budget and preferences below, and let EKVS recommend the perfect meal for your group.</p>
+</header>
+
+<div class="profile-container" style="max-width: 600px; margin: 15px auto 0; text-align: right; padding: 0 16px;">
+  <span style="font-weight: 800; font-size: 13px; color: var(--gold); margin-right: 8px;">👤 Active Profile:</span>
+  <select id="profile-select" style="
+    background: #000;
+    color: var(--cream);
+    border: 2px solid var(--gold);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-weight: 800;
+    font-family: 'Baloo 2', sans-serif;
+    cursor: pointer;
+  ">
+    <option value="all">All Profiles</option>
+  </select>
+  <button id="btn-add-profile" style="
+    background: var(--gold);
+    color: #000;
+    border: 2px solid #000;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-weight: 800;
+    font-family: 'Baloo 2', sans-serif;
+    cursor: pointer;
+    margin-left: 8px;
+    box-shadow: 0 2px 0 #000;
+  ">+ Profile</button>
+</div>
+
+<nav class="tabs">
+  <button data-tab="claim" class="active">🍽️ Decide Meal</button>
+  <button data-tab="manage">🏪 Menu Inventory</button>
+  <button data-tab="history">📜 Eating History</button>
+</nav>
+
+<main>
+
+  <!-- ================= CLAIM TAB ================= -->
+  <section class="panel active" id="tab-claim">
+    <div class="ticket">
+      <label>💰 Total Budget (for the group)</label>
+      <input type="number" id="in-budget" placeholder="e.g. 500" min="1" />
+
+      <label>👥 Number of People</label>
+      <input type="number" id="in-people" placeholder="e.g. 2" min="1" value="2" />
+
+      <label>🥗 Preference</label>
+      <select id="in-pref">
+        <option value="">No preference</option>
+        <option value="veg">Veg</option>
+        <option value="non-veg">Non-veg</option>
+        <option value="egg">Egg</option>
+        <option value="spicy">Spicy</option>
+        <option value="dessert">Dessert / Sweet</option>
+        <option value="light">Light / Healthy</option>
+        <option value="street food">Street food</option>
+      </select>
+
+      <label>📍 Restaurant Area</label>
+      <select id="in-area">
+        <option value="">Any Area</option>
+      </select>
+
+      <label>🧭 Adventurous Level</label>
+      <div style="display: flex; align-items: center; gap: 10px; margin: 5px 0 15px;">
+        <span style="font-size: 12px; font-weight: 800; opacity: 0.7;">Safe 🛡️</span>
+        <input type="range" id="in-variety" min="0" max="2" value="1" style="
+          flex: 1;
+          height: 8px;
+          border-radius: 5px;
+          background: #d3d3d3;
+          outline: none;
+          accent-color: var(--gold);
+          cursor: pointer;
+        " />
+        <span style="font-size: 12px; font-weight: 800; opacity: 0.7;">Wild 🦁</span>
+      </div>
+
+      <label>✏️ Additional Info</label>
+      <textarea id="in-notes" placeholder="e.g. rainy day, want something quick, near hostel..."></textarea>
+
+      <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <button class="big-cta" id="btn-suggest" style="flex: 2; margin-top: 0;">🔮 FIND MY MEAL</button>
+        <button class="big-cta" id="btn-create-poll" style="flex: 1.5; background: var(--hot-pink); box-shadow: 0 6px 0 #8c0a4d; margin-top: 0; color: #fff;">🗳️ CREATE POLL</button>
+      </div>
+      
+      <div style="margin-top: 15px; display: flex; align-items: center; gap: 8px; border-top: 2px dashed rgba(255,255,255,0.1); padding-top: 15px;">
+        <input type="text" id="poll-code-input" placeholder="Join Code (e.g. 4821)" style="
+          flex: 1;
+          background: rgba(255,255,255,0.06);
+          color: var(--cream);
+          border: 2px solid var(--gold);
+          border-radius: 8px;
+          padding: 8px 12px;
+          font-weight: 800;
+          font-family: 'Baloo 2', sans-serif;
+          font-size: 15px;
+        " />
+        <button id="btn-join-poll" style="
+          background: var(--win-green);
+          color: #000;
+          border: 3px solid #000;
+          border-radius: 10px;
+          padding: 8px 16px;
+          font-weight: 800;
+          cursor: pointer;
+          box-shadow: 0 4px 0 #000;
+          font-family: 'Baloo 2', sans-serif;
+          font-size: 15px;
+        ">JOIN POLL</button>
+      </div>
+
+      <div class="spinner-wrap" id="spin-wrap">
+        <div class="spinner"></div>
+        <div class="display" style="font-size:18px;">Selecting the perfect meal...</div>
+      </div>
+    </div>
+
+    <div id="results"></div>
+  </section>
+
+  <!-- ================= MANAGE TAB ================= -->
+  <section class="panel" id="tab-manage">
+    <div class="ticket">
+      <h3 class="display" style="margin:0 0 10px; font-size:20px;">➕ Add a New Place</h3>
+      <label>Place name</label>
+      <input type="text" id="np-name" placeholder="e.g. Sangeetha Veg" />
+      <label>Area</label>
+      <input type="text" id="np-area" placeholder="e.g. Anna Nagar" />
+      <label>Notes</label>
+      <input type="text" id="np-notes" placeholder="anything else" />
+
+      <label style="margin-top:20px;">🍽️ Menu Items</label>
+      <div id="np-items-wrap"></div>
+      <div class="small-form" style="margin-top:4px;">
+        <button type="button" id="btn-add-item-row" style="background:var(--deep-purple-2); color:#fff; border:none; border-radius:8px; padding:6px 12px; font-weight:800; cursor:pointer;">+ Add another item</button>
+      </div>
+
+      <button class="big-cta" id="btn-add-place" style="font-size:16px; margin-top:14px;">ADD PLACE + MENU</button>
+    </div>
+
+    <div id="places-list"></div>
+  </section>
+
+  <!-- ================= HISTORY TAB ================= -->
+  <section class="panel" id="tab-history">
+    <div id="history-stats" style="
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    "></div>
+    <div id="history-list"></div>
+  </section>
+
+</main>
+
+<!-- Custom Modal Dialog -->
+<div id="custom-modal" style="
+  display: none;
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(22, 4, 36, 0.85);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+">
+  <div class="ticket" style="
+    max-width: 400px;
+    width: 100%;
+    margin-bottom: 0;
+    box-shadow: 0 8px 0 #000, 0 8px 24px rgba(0,0,0,.6);
+  ">
+    <h3 id="modal-title" class="display" style="margin:0 0 10px; font-size:22px; color: var(--hot-pink);">Notice</h3>
+    <p id="modal-message" style="margin: 10px 0 20px; font-weight: 700; font-size: 15px; color: #1a0630;"></p>
+    
+    <div id="modal-prompt-container" style="display: none; margin-bottom: 20px;">
+      <input type="text" id="modal-input" style="width: 100%;" />
+    </div>
+    
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <button id="modal-btn-cancel" class="claim-btn" style="background: var(--prize-red); color: #fff; margin-top: 0; box-shadow: 0 3px 0 #8c0012; font-weight: 800; display: none;">Cancel</button>
+      <button id="modal-btn-ok" class="claim-btn" style="background: var(--win-green); color: #000; margin-top: 0; box-shadow: 0 3px 0 #0b6b3c; font-weight: 800;">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="status-pill" style="display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+  <span id="status-pill">checking sync...</span>
+  <span id="btn-manual-sync" style="cursor: pointer; font-size: 14px;" title="Sync database now">🔄</span>
+</div>
+
+<script>
+const API = "";
+
+function $(sel){ return document.querySelector(sel); }
+function $all(sel){ return document.querySelectorAll(sel); }
+
+// Global Application State (declared at top to prevent TDZ ReferenceErrors)
+let placesCache = [];
+let expandedPlaces = new Set();
+let userProfiles = ["MegaTron"];
+let currentSuggestions = [];
+let currentSuggestionIndex = 0;
+let pollTimer = null;
+let currentPollCode = null;
+let isPollCreator = false;
+let userHasVoted = false;
+
+// Custom Modal logic
+const Modal = {
+  el: $("#custom-modal"),
+  title: $("#modal-title"),
+  msg: $("#modal-message"),
+  promptContainer: $("#modal-prompt-container"),
+  input: $("#modal-input"),
+  btnCancel: $("#modal-btn-cancel"),
+  btnOk: $("#modal-btn-ok"),
+  resolve: null,
+
+  alert(message, title = "EKVS Notice") {
+    this.title.textContent = title;
+    this.msg.textContent = message;
+    this.promptContainer.style.display = "none";
+    this.btnCancel.style.display = "none";
+    this.btnOk.textContent = "OK";
+    this.el.style.display = "flex";
+    return new Promise((resolve) => {
+      this.resolve = () => {
+        this.el.style.display = "none";
+        resolve();
+      };
+    });
+  },
+
+  confirm(message, title = "Are you sure?") {
+    this.title.textContent = title;
+    this.msg.textContent = message;
+    this.promptContainer.style.display = "none";
+    this.btnCancel.style.display = "block";
+    this.btnCancel.textContent = "Cancel";
+    this.btnOk.textContent = "Yes";
+    this.el.style.display = "flex";
+    return new Promise((resolve) => {
+      this.resolve = (val) => {
+        this.el.style.display = "none";
+        resolve(val);
+      };
+    });
+  },
+
+  prompt(message, defaultValue = "", title = "Edit Price") {
+    this.title.textContent = title;
+    this.msg.textContent = message;
+    this.promptContainer.style.display = "block";
+    this.input.value = defaultValue;
+    this.btnCancel.style.display = "block";
+    this.btnCancel.textContent = "Cancel";
+    this.btnOk.textContent = "Save";
+    this.el.style.display = "flex";
+    this.input.focus();
+    return new Promise((resolve) => {
+      this.resolve = (val) => {
+        this.el.style.display = "none";
+        resolve(val ? this.input.value : null);
+      };
+    });
+  }
+};
+
+$("#modal-btn-ok").addEventListener("click", () => {
+  if(Modal.resolve) Modal.resolve(true);
+});
+$("#modal-btn-cancel").addEventListener("click", () => {
+  if(Modal.resolve) Modal.resolve(false);
+});
+
+// ---------------- Tabs ----------------
+$all("nav.tabs button").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    $all("nav.tabs button").forEach(b=>b.classList.remove("active"));
+    $all("section.panel").forEach(p=>p.classList.remove("active"));
+    btn.classList.add("active");
+    $("#tab-"+btn.dataset.tab).classList.add("active");
+    if(btn.dataset.tab === "manage") loadPlaces();
+    if(btn.dataset.tab === "history") loadHistory();
+  });
+});
+
+// ---------------- Status pill ----------------
+async function checkStatus(){
+  try{
+    const r = await fetch(API+"/api/status");
+    const d = await r.json();
+    $("#status-pill").textContent = d.mongo_connected ? "☁️ synced to Mongo" : "📴 offline (local only)";
+  }catch(e){
+    $("#status-pill").textContent = "📴 offline (local only)";
+  }
+}
+checkStatus();
+initProfiles();
+loadPlaces(); // Populate places and areas dropdown on page load
+
+// Wire up manual sync button
+$("#btn-manual-sync").addEventListener("click", async () => {
+  const syncBtn = $("#btn-manual-sync");
+  syncBtn.classList.add("syncing");
+  try {
+    const [pushRes, pullRes] = await Promise.all([
+      fetch(API + "/api/sync/push", { method: "POST" }),
+      fetch(API + "/api/sync/pull", { method: "POST" })
+    ]);
+    const pushData = await pushRes.json();
+    const pullData = await pullRes.json();
+    
+    await checkStatus();
+    await loadPlaces();
+    await loadHistory();
+    
+    await Modal.alert(`Sync complete! Pushed ${pushData.pushed || 0} local updates. Pulled ${pullData.pulled || 0} cloud updates.`);
+  } catch (e) {
+    await Modal.alert("Sync failed. Check your internet connection.");
+  } finally {
+    syncBtn.classList.remove("syncing");
+  }
+});
+
+// Wire up group poll buttons
+$("#btn-create-poll").addEventListener("click", createGroupPoll);
+$("#btn-join-poll").addEventListener("click", joinGroupPoll);
+
+// ---------------- Suggestions ----------------
+
+$("#btn-suggest").addEventListener("click", async ()=>{
+  const budget = parseFloat($("#in-budget").value);
+  const people = parseInt($("#in-people").value);
+  const preference = $("#in-pref").value;
+  const additional_info = $("#in-notes").value;
+  const area = $("#in-area").value;
+  const variety = parseInt($("#in-variety").value);
+  const activeProfile = $("#profile-select").value;
+  const who = activeProfile === "all" ? "" : activeProfile;
+
+  if(!budget || !people){
+    await Modal.alert("Enter budget and number of people first!");
+    return;
+  }
+
+  $("#btn-suggest").disabled = true;
+  $("#spin-wrap").classList.add("show");
+  $("#results").innerHTML = "";
+
+  try{
+    const r = await fetch(API+"/api/suggest", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({budget, people, preference, additional_info, area, variety, who, count:40})
+    });
+    const data = await r.json();
+    setTimeout(()=>{
+      $("#spin-wrap").classList.remove("show");
+      $("#btn-suggest").disabled = false;
+      if(!r.ok){
+        $("#results").innerHTML = `<div class="empty">😬 ${data.detail || "Something went wrong"}</div>`;
+        return;
+      }
+      currentSuggestions = data.suggestions;
+      currentSuggestionIndex = 0;
+      renderSuggestionCard(people);
+      if(window.confetti){
+        confetti({ particleCount: 140, spread: 90, origin: { y: 0.6 } });
+      }
+    }, 900);
+  }catch(e){
+    $("#spin-wrap").classList.remove("show");
+    $("#btn-suggest").disabled = false;
+    $("#results").innerHTML = `<div class="empty">Could not reach the server.</div>`;
+  }
+});
+
+function renderSuggestionCard(people){
+  if(!currentSuggestions || currentSuggestions.length === 0){
+    $("#results").innerHTML = `<div class="empty">No suggestions found matching your budget/preference. Try raising the budget! 😬</div>`;
+    return;
+  }
+  const s = currentSuggestions[currentSuggestionIndex];
+  
+  $("#results").innerHTML = `
+    <div class="prize-card" style="text-align: center;">
+      <div style="font-weight:800; font-size:12px; letter-spacing:1px; opacity:.7;">📍 RECOMMENDED RESTAURANT</div>
+      <h2 id="btn-toggle-restaurant" style="cursor: pointer; font-family:'Luckiest Guy', cursive; font-size: 34px; margin: 10px 0; color: #1a0630; text-decoration: underline; text-decoration-style: dashed; text-underline-offset: 6px;">
+        ${s.place_name}${s.area ? " · " + s.area : ""}
+      </h2>
+      <div id="click-prompt" style="font-size: 12px; font-weight: 700; opacity: 0.6; margin-bottom: 15px;">👇 Click restaurant name to reveal recommendation</div>
+      
+      <div id="item-details-container" style="display: none; margin-top: 15px; border-top: 2px dashed rgba(0,0,0,0.15); padding-top: 15px;">
+        <span style="font-weight:800; font-size:12px; opacity:.7;">💡 SUGGESTED MEAL</span>
+        <h3 style="font-family:'Luckiest Guy', cursive; margin:5px 0 4px; font-size:24px;">${s.item_name}</h3>
+        <div class="amount" style="font-family:'Luckiest Guy', cursive; font-size:30px; color:var(--prize-red); margin:8px 0 4px; text-shadow:1px 1px 0 #fff8;">₹${s.expected_amount.toFixed(0)}</div>
+        <div style="font-size:12px; margin-bottom: 15px;">for ${people} ${people > 1 ? "people" : "person"} (₹${s.price_per_person} each)</div>
+        <button class="claim-btn" data-place="${s.place_id}" data-item="${s.item_id}" data-amount="${s.expected_amount}" style="width: 100%;">✅ SELECT THIS MEAL</button>
+      </div>
+      
+      <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <button id="btn-reroll-meal" style="flex: 1; background: var(--gold); color: #000; border: 3px solid #000; border-radius: 10px; padding: 10px 16px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 0 #000; font-family: 'Baloo 2', sans-serif; font-size: 15px;">
+          🔄 REROLL MEAL
+        </button>
+        <button id="btn-reroll-suggestion" style="flex: 1; background: var(--deep-purple-2); color: white; border: 3px solid #000; border-radius: 10px; padding: 10px 16px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 0 #000; font-family: 'Baloo 2', sans-serif; font-size: 15px;">
+          🔄 REROLL RESTAURANT
+        </button>
+      </div>
+    </div>
+  `;
+
+  // Wire up toggle
+  const toggleBtn = $("#btn-toggle-restaurant");
+  const detailsContainer = $("#item-details-container");
+  const clickPrompt = $("#click-prompt");
+  toggleBtn.addEventListener("click", () => {
+    const isHidden = detailsContainer.style.display === "none";
+    detailsContainer.style.display = isHidden ? "block" : "none";
+    clickPrompt.textContent = isHidden ? "👆 Click restaurant name to hide details" : "👇 Click restaurant name to reveal recommendation";
+  });
+
+  // Wire up reroll restaurant (finds next suggestion with a different place_id)
+  const rerollBtn = $("#btn-reroll-suggestion");
+  rerollBtn.addEventListener("click", () => {
+    const currentPlaceId = currentSuggestions[currentSuggestionIndex].place_id;
+    let nextIdx = (currentSuggestionIndex + 1) % currentSuggestions.length;
+    while (currentSuggestions[nextIdx].place_id === currentPlaceId && nextIdx !== currentSuggestionIndex) {
+      nextIdx = (nextIdx + 1) % currentSuggestions.length;
+    }
+    currentSuggestionIndex = nextIdx;
+    renderSuggestionCard(people);
+  });
+
+  // Wire up reroll meal (finds next suggestion with the same place_id but different item_id)
+  const rerollMealBtn = $("#btn-reroll-meal");
+  rerollMealBtn.addEventListener("click", async () => {
+    const currentPlaceId = currentSuggestions[currentSuggestionIndex].place_id;
+    const currentItemId = currentSuggestions[currentSuggestionIndex].item_id;
+    let nextIdx = (currentSuggestionIndex + 1) % currentSuggestions.length;
+    while (nextIdx !== currentSuggestionIndex) {
+      const cand = currentSuggestions[nextIdx];
+      if (cand.place_id === currentPlaceId && cand.item_id !== currentItemId) {
+        currentSuggestionIndex = nextIdx;
+        renderSuggestionCard(people);
+        $("#item-details-container").style.display = "block";
+        $("#click-prompt").textContent = "👆 Click restaurant name to hide details";
+        return;
+      }
+      nextIdx = (nextIdx + 1) % currentSuggestions.length;
+    }
+    await Modal.alert("No other meal combinations fit your budget at this restaurant!");
+  });
+
+  // Wire up select
+  const claimBtn = $("#results .claim-btn");
+  claimBtn.addEventListener("click", async () => {
+    claimBtn.disabled = true;
+    claimBtn.textContent = "Selecting...";
+    const activeProfile = $("#profile-select").value;
+    const who = activeProfile === "all" ? "MegaTron" : activeProfile;
+    try {
+      await fetch(API + "/api/history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          place_id: claimBtn.dataset.place,
+          item_id: claimBtn.dataset.item,
+          people: people,
+          amount: parseFloat(claimBtn.dataset.amount),
+          budget: parseFloat($("#in-budget").value) || 0.0,
+          who: who
+        })
+      });
+      claimBtn.textContent = "🍽️ SELECTED!";
+      claimBtn.classList.add("claimed");
+      if (window.confetti) { confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } }); }
+
+      // Hide recommendations after selection
+      setTimeout(() => {
+        const resultsDiv = $("#results");
+        resultsDiv.style.transition = "opacity 0.6s ease";
+        resultsDiv.style.opacity = "0";
+        setTimeout(() => {
+          resultsDiv.innerHTML = "";
+          resultsDiv.style.opacity = "1";
+        }, 600);
+      }, 1200);
+    } catch (e) {
+      claimBtn.textContent = "Failed, tap to retry";
+      claimBtn.disabled = false;
+    }
+  });
+}
+
+// ---------------- Manage: Places & Items ----------------
+
+function getStarsHTML(rating){
+  let html = "";
+  for(let i = 1; i <= 5; i++){
+    html += `<span class="star" data-value="${i}" style="font-size:15px; margin-right:2px; color:${i <= rating ? "var(--gold)" : "rgba(255,255,255,0.25)"};">${i <= rating ? "★" : "☆"}</span>`;
+  }
+  return html;
+}
+
+function populateAreas(){
+  const areas = [...new Set(placesCache.map(p => p.area).filter(a => a && a.trim() !== ""))].sort();
+  const areaSelect = $("#in-area");
+  if (!areaSelect) return;
+  const currentVal = areaSelect.value;
+  areaSelect.innerHTML = `<option value="">Any Area</option>` + areas.map(a => `<option value="${a}">${a}</option>`).join("");
+  if (areas.includes(currentVal)) {
+    areaSelect.value = currentVal;
+  } else {
+    areaSelect.value = "";
+  }
+}
+
+async function loadPlaces(){
+  const r = await fetch(API+"/api/places");
+  placesCache = await r.json();
+  const itemsR = await fetch(API+"/api/items");
+  const allItems = await itemsR.json();
+
+  populateAreas();
+
+  if(placesCache.length === 0){
+    $("#places-list").innerHTML = `<div class="empty">No places yet — add your first one above! 🎉</div>`;
+    return;
+  }
+
+  $("#places-list").innerHTML = placesCache.map(p=>{
+    const items = allItems.filter(it=>it.place_id === p.id);
+    const isExpanded = expandedPlaces.has(p.id);
+    return `
+    <div class="place-block" data-place-id="${p.id}">
+      <div class="place-header" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h3 style="margin: 0; font-family:'Luckiest Guy', cursive; color:var(--gold);">${p.name}</h3>
+          <div class="place-meta" style="margin: 4px 0 0 0; font-size: 12px; opacity: .75;">${p.area||""} ${p.cuisine? "· "+p.cuisine:""} ${p.price_range? "· "+p.price_range:""}</div>
+        </div>
+        <span class="toggle-icon" style="font-size: 16px; transition: transform 0.2s ease; transform: ${isExpanded ? "rotate(90deg)" : "none"}">▶</span>
+      </div>
+      
+      <div class="place-details" style="display: ${isExpanded ? "block" : "none"}; margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px;">
+        <div class="items-container">
+          ${items.map(it=>`
+            <div class="item-row" data-item-id="${it.id}">
+              <span>
+                ${it.name} 
+                <span style="opacity:.6">(${it.category||"—"})</span>
+                <span class="star-rating" style="margin-left:8px; cursor:pointer;" title="Click to rate this item">
+                  ${getStarsHTML(it.rating || 0)}
+                </span>
+              </span>
+              <span>
+                <span class="price">₹${it.price}</span>
+                <span class="row-actions">
+                  <button class="edit-item-btn" title="Edit price">✏️</button>
+                  <button class="del-item-btn" title="Delete">🗑️</button>
+                </span>
+              </span>
+            </div>
+          `).join("") || `<div style="font-size:13px; opacity:.6;">No items yet.</div>`}
+        </div>
+        <div class="small-form">
+          <input type="text" class="new-item-name" placeholder="Item name" />
+          <input type="number" class="new-item-price" placeholder="Price" style="max-width:80px;" />
+          <select class="new-item-cat" style="max-width:100px;">
+            <option value="veg">Veg</option>
+            <option value="non-veg">Non-Veg</option>
+            <option value="egg">Egg</option>
+          </select>
+          <select class="new-item-tags" style="max-width:130px;">
+            <option value="">No tag</option>
+            <option value="spicy">Spicy</option>
+            <option value="sweet">Sweet</option>
+            <option value="light">Light</option>
+            <option value="healthy">Healthy</option>
+            <option value="street food">Street Food</option>
+            <option value="dessert">Dessert</option>
+            <option value="snack">Snack</option>
+            <option value="rice">Rice</option>
+            <option value="beverage">Beverage</option>
+            <option value="fast food">Fast Food</option>
+          </select>
+          <button class="add-item-btn">Add Item</button>
+        </div>
+        <div class="row-actions" style="margin-top:12px; text-align:right;">
+          <button class="del-place-btn" style="color:#ff8b8b;">🗑️ Delete Place</button>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+
+  // Wire up per-place details toggle and operations
+  $all(".place-block").forEach(block=>{
+    const placeId = block.dataset.placeId;
+    const header = block.querySelector(".place-header");
+    const details = block.querySelector(".place-details");
+    const toggleIcon = block.querySelector(".toggle-icon");
+
+    header.addEventListener("click", ()=>{
+      const isHidden = details.style.display === "none";
+      if(isHidden){
+        details.style.display = "block";
+        toggleIcon.style.transform = "rotate(90deg)";
+        expandedPlaces.add(placeId);
+      } else {
+        details.style.display = "none";
+        toggleIcon.style.transform = "none";
+        expandedPlaces.delete(placeId);
+      }
+    });
+
+    block.querySelector(".add-item-btn").addEventListener("click", async (e)=>{
+      e.stopPropagation();
+      const name = block.querySelector(".new-item-name").value.trim();
+      const price = parseFloat(block.querySelector(".new-item-price").value);
+      const category = block.querySelector(".new-item-cat").value.trim();
+      const tags = block.querySelector(".new-item-tags").value.trim();
+      if(!name || !price){ await Modal.alert("Item needs a name and price"); return; }
+      await fetch(`${API}/api/places/${placeId}/items`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({name, price, category, tags})
+      });
+      loadPlaces();
+    });
+
+    block.querySelector(".del-place-btn").addEventListener("click", async (e)=>{
+      e.stopPropagation();
+      if(!await Modal.confirm("Delete this place and hide its items?")) return;
+      await fetch(`${API}/api/places/${placeId}`, {method:"DELETE"});
+      expandedPlaces.delete(placeId);
+      loadPlaces();
+    });
+
+    block.querySelectorAll(".item-row").forEach(row=>{
+      const itemId = row.dataset.itemId;
+      
+      // Wire up star click
+      row.querySelectorAll(".star").forEach(star=>{
+        star.addEventListener("click", async (e)=>{
+          e.stopPropagation();
+          const ratingValue = parseInt(star.dataset.value);
+          await fetch(`${API}/api/items/${itemId}`, {
+            method:"PUT", headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({rating: ratingValue})
+          });
+          loadPlaces();
+        });
+      });
+
+      row.querySelector(".edit-item-btn").addEventListener("click", async (e)=>{
+        e.stopPropagation();
+        const currentPrice = row.querySelector(".price").textContent.replace("₹", "").trim();
+        const newPrice = await Modal.prompt("New price?", currentPrice);
+        if(newPrice === null || newPrice === "") return;
+        await fetch(`${API}/api/items/${itemId}`, {
+          method:"PUT", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({price: parseFloat(newPrice)})
+        });
+        loadPlaces();
+      });
+      row.querySelector(".del-item-btn").addEventListener("click", async (e)=>{
+        e.stopPropagation();
+        if(!await Modal.confirm("Delete this item?")) return;
+        await fetch(`${API}/api/items/${itemId}`, {method:"DELETE"});
+        loadPlaces();
+      });
+    });
+  });
+}
+
+// ---- Inline menu-item rows on the Add Place form ----
+function addItemRow(){
+  const wrap = $("#np-items-wrap");
+  const row = document.createElement("div");
+  row.className = "small-form new-item-row";
+  row.style.marginTop = "6px";
+  row.innerHTML = `
+    <input type="text" class="ni-name" placeholder="Item name" />
+    <input type="number" class="ni-price" placeholder="Price" style="max-width:80px;" />
+    <select class="ni-cat" style="max-width:100px;">
+      <option value="veg">Veg</option>
+      <option value="non-veg">Non-Veg</option>
+      <option value="egg">Egg</option>
+    </select>
+    <select class="ni-tags" style="max-width:130px;">
+      <option value="">No tag</option>
+      <option value="spicy">Spicy</option>
+      <option value="sweet">Sweet</option>
+      <option value="light">Light</option>
+      <option value="healthy">Healthy</option>
+      <option value="street food">Street Food</option>
+      <option value="dessert">Dessert</option>
+      <option value="snack">Snack</option>
+      <option value="rice">Rice</option>
+      <option value="beverage">Beverage</option>
+      <option value="fast food">Fast Food</option>
+    </select>
+    <button type="button" class="remove-item-row" style="background:none; border:2px solid #ff8b8b; color:#ff8b8b; border-radius:8px; padding:4px 10px; cursor:pointer;">✕</button>
+  `;
+  row.querySelector(".remove-item-row").addEventListener("click", ()=> row.remove());
+  wrap.appendChild(row);
+}
+// start with one empty item row ready to fill in
+addItemRow();
+$("#btn-add-item-row").addEventListener("click", addItemRow);
+
+$("#btn-add-place").addEventListener("click", async ()=>{
+  const name = $("#np-name").value.trim();
+  if(!name){ await Modal.alert("Place needs a name"); return; }
+
+  const itemRows = Array.from($all("#np-items-wrap .new-item-row")).map(row=>({
+    name: row.querySelector(".ni-name").value.trim(),
+    price: parseFloat(row.querySelector(".ni-price").value),
+    category: row.querySelector(".ni-cat").value.trim(),
+    tags: row.querySelector(".ni-tags").value.trim(),
+  })).filter(it=> it.name && !isNaN(it.price));
+
+  $("#btn-add-place").disabled = true;
+  $("#btn-add-place").textContent = "Adding...";
+
+  try{
+    const placeRes = await fetch(API+"/api/places", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ name, area: $("#np-area").value.trim(), notes: $("#np-notes").value.trim() })
+    });
+    const place = await placeRes.json();
+
+    for(const it of itemRows){
+      await fetch(`${API}/api/places/${place.id}/items`, {
+        method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(it)
+      });
+    }
+
+    ["#np-name","#np-area","#np-notes"].forEach(s=>$(s).value="");
+    $("#np-items-wrap").innerHTML = "";
+    addItemRow();
+    loadPlaces();
+  }catch(e){
+    await Modal.alert("Something went wrong adding the place. Try again.");
+  }finally{
+    $("#btn-add-place").disabled = false;
+    $("#btn-add-place").textContent = "ADD PLACE + MENU";
+  }
+});
+
+// ---------------- Group Dining Polls Client Logic ----------------
+
+async function createGroupPoll(){
+  const budget = parseFloat($("#in-budget").value);
+  const people = parseInt($("#in-people").value);
+  const preference = $("#in-pref").value;
+  const additional_info = $("#in-notes").value;
+  const area = $("#in-area").value;
+  const variety = parseInt($("#in-variety").value);
+
+  if(!budget || !people){
+    await Modal.alert("Enter budget and number of people first!");
+    return;
+  }
+
+  $("#btn-create-poll").disabled = true;
+  $("#results").innerHTML = `<div class="empty">Creating poll room and choosing candidates... 🔮</div>`;
+
+  try{
+    const r = await fetch(API+"/api/polls", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({budget, people, preference, additional_info, area, variety})
+    });
+    const data = await r.json();
+    if(!r.ok){
+      $("#results").innerHTML = `<div class="empty">😬 ${data.detail || "Failed to create poll"}</div>`;
+      $("#btn-create-poll").disabled = false;
+      return;
+    }
+    
+    currentPollCode = data.code;
+    isPollCreator = true;
+    userHasVoted = false;
+    
+    startPollRoomTracking();
+  }catch(e){
+    $("#btn-create-poll").disabled = false;
+    $("#results").innerHTML = `<div class="empty">Connection error. Verify Mongo is online.</div>`;
+  }
+}
+
+async function joinGroupPoll(){
+  const code = $("#poll-code-input").value.trim();
+  if(!code){
+    await Modal.alert("Please enter a room code first!");
+    return;
+  }
+
+  try {
+    const r = await fetch(API+`/api/polls/${code}`);
+    const data = await r.json();
+    if(!r.ok){
+      await Modal.alert(data.detail || "Room not found.");
+      return;
+    }
+    
+    currentPollCode = code;
+    isPollCreator = false;
+    
+    const activeProfile = $("#profile-select").value;
+    const votedUsersNormalized = (data.voted_users || []).map(u => u.toLowerCase());
+    userHasVoted = votedUsersNormalized.includes(activeProfile.toLowerCase());
+    
+    startPollRoomTracking();
+  } catch(e) {
+    await Modal.alert("Could not connect to the poll room.");
+  }
+}
+
+function startPollRoomTracking(){
+  if(pollTimer) clearInterval(pollTimer);
+  $("#spin-wrap").classList.remove("show");
+  $("#btn-suggest").disabled = false;
+  $("#btn-create-poll").disabled = false;
+  
+  refreshPollRoom();
+  pollTimer = setInterval(refreshPollRoom, 2000);
+}
+
+async function refreshPollRoom(){
+  if (!currentPollCode) {
+    if (pollTimer) clearInterval(pollTimer);
+    return;
+  }
+  
+  try {
+    const r = await fetch(API+`/api/polls/${currentPollCode}`);
+    const poll = await r.json();
+    if(!r.ok){
+      clearInterval(pollTimer);
+      currentPollCode = null;
+      $("#results").innerHTML = `<div class="empty">Poll room was closed or not found.</div>`;
+      return;
+    }
+    
+    if (!poll.active && poll.winner) {
+      clearInterval(pollTimer);
+      renderPollWinner(poll.winner);
+      currentPollCode = null;
+      return;
+    }
+    
+    renderPollVotingState(poll);
+  } catch(e) {
+    console.error("Poll update failed:", e);
+  }
+}
+
+function renderPollVotingState(poll){
+  const resultsDiv = $("#results");
+  const activeProfile = $("#profile-select").value;
+  const who = activeProfile === "all" ? "MegaTron" : activeProfile;
+  
+  const votedUsersNormalized = (poll.voted_users || []).map(u => u.toLowerCase());
+  userHasVoted = votedUsersNormalized.includes(who.toLowerCase());
+
+  const totalVotes = Object.values(poll.votes).reduce((a, b) => a + b, 0);
+  
+  let candidatesHTML = poll.candidates.map(c => {
+    const count = poll.votes[c.id] || 0;
+    const pct = totalVotes > 0 ? ((count / totalVotes) * 100).toFixed(0) : 0;
+    
+    if (userHasVoted) {
+      return `
+        <div style="background: rgba(0,0,0,0.06); border: 2px solid var(--gold); border-radius: 10px; padding: 12px; margin-bottom: 10px; text-align: left;">
+          <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 14px;">
+            <span>${c.item_name} <span style="opacity: 0.6; font-size: 12px;">@ ${c.place_name}</span></span>
+            <span style="color: var(--win-green);">${count} votes (${pct}%)</span>
+          </div>
+          <div style="width: 100%; background: rgba(255,255,255,0.1); border-radius: 4px; height: 8px; margin-top: 8px; overflow: hidden;">
+            <div style="width: ${pct}%; background: var(--win-green); height: 100%;"></div>
+          </div>
+        </div>
+      `;
+    } else {
+      return `
+        <button class="vote-choice-btn" data-candidate="${c.id}" style="
+          width: 100%;
+          text-align: left;
+          background: var(--cream);
+          color: #000;
+          border: 3px solid #000;
+          border-radius: 10px;
+          padding: 12px;
+          margin-bottom: 10px;
+          font-weight: 800;
+          font-family: 'Baloo 2', sans-serif;
+          cursor: pointer;
+          box-shadow: 0 4px 0 #000;
+        ">
+          👍 ${c.item_name} <span style="opacity: 0.6; font-size: 12px; font-weight: 600;">@ ${c.place_name}</span>
+        </button>
+      `;
+    }
+  }).join("");
+
+  resultsDiv.innerHTML = `
+    <div class="prize-card" style="text-align: center;">
+      <span style="font-weight:800; font-size:12px; letter-spacing:1px; opacity:.7; color: var(--hot-pink);">🗳️ GROUP DINING POLL</span>
+      <h2 style="font-family:'Luckiest Guy', cursive; font-size: 34px; margin: 10px 0; color: #1a0630; letter-spacing: 1px;">
+        ROOM: ${poll.code}
+      </h2>
+      <div style="font-size: 13px; font-weight: 700; opacity: 0.7; margin-bottom: 20px;">
+        👤 Voting as: <strong style="color: var(--deep-purple-2);">${who}</strong>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        ${candidatesHTML}
+      </div>
+
+      <div style="font-size: 13px; font-weight: 700; margin-bottom: 15px; opacity: 0.8;">
+        👥 Voters in room: ${poll.voted_users.length > 0 ? poll.voted_users.join(", ") : "waiting for votes..."}
+      </div>
+
+      ${isPollCreator ? `
+        <button id="btn-close-poll" class="big-cta" style="background: var(--hot-pink); box-shadow: 0 6px 0 #8c0a4d; margin-top: 10px;">
+          🔒 CLOSE POLL & CHOOSE WINNER
+        </button>
+      ` : `
+        <div style="font-size: 12px; font-weight: 800; opacity: 0.6; padding: 10px 0;">
+          ⏳ Waiting for host to close the poll...
+        </div>
+      `}
+    </div>
+  `;
+
+  if (isPollCreator) {
+    $("#btn-close-poll").addEventListener("click", async () => {
+      try {
+        const r = await fetch(API+`/api/polls/${poll.code}/close`, { method: "POST" });
+        const data = await r.json();
+        if(r.ok){
+          clearInterval(pollTimer);
+          renderPollWinner(data.winner);
+          currentPollCode = null;
+        }
+      } catch(e) {
+        Modal.alert("Failed to close poll.");
+      }
+    });
+  }
+
+  if (!userHasVoted) {
+    $all(".vote-choice-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const candidateId = btn.dataset.candidate;
+        btn.disabled = true;
+        try {
+          const r = await fetch(API+`/api/polls/${poll.code}/vote`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ candidate_id: candidateId, who: who })
+          });
+          if(r.ok){
+            userHasVoted = true;
+            refreshPollRoom();
+          } else {
+            const data = await r.json();
+            Modal.alert(data.detail || "Failed to submit vote");
+            btn.disabled = false;
+          }
+        } catch(e) {
+          Modal.alert("Vote failed. Connection error.");
+          btn.disabled = false;
+        }
+      });
+    });
+  }
+}
+
+function renderPollWinner(winner){
+  const resultsDiv = $("#results");
+  const people = parseInt($("#in-people").value) || 2;
+  
+  if (window.confetti) {
+    confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+  }
+
+  resultsDiv.innerHTML = `
+    <div class="prize-card" style="text-align: center; border: 4px solid var(--win-green); background: #f0fff4;">
+      <span style="font-weight:800; font-size:13px; letter-spacing:1px; color: var(--win-green);">🏆 POLL WINNER</span>
+      <h2 style="font-family:'Luckiest Guy', cursive; font-size: 34px; margin: 10px 0; color: #0b6b3c;">
+        ${winner.place_name}${winner.area ? " · " + winner.area : ""}
+      </h2>
+      
+      <div style="margin-top: 15px; border-top: 2px dashed rgba(11, 107, 60, 0.25); padding-top: 15px;">
+        <span style="font-weight:800; font-size:12px; opacity:.7; color: #0b6b3c;">💡 SUGGESTED MEAL</span>
+        <h3 style="font-family:'Luckiest Guy', cursive; margin:5px 0 4px; font-size:24px; color: #1a0630;">${winner.item_name}</h3>
+        <div class="amount" style="font-family:'Luckiest Guy', cursive; font-size:30px; color:var(--prize-red); margin:8px 0 4px; text-shadow:1px 1px 0 #fff8;">₹${winner.expected_amount.toFixed(0)}</div>
+        <div style="font-size:12px; margin-bottom: 15px; color: #333;">for ${people} ${people > 1 ? "people" : "person"} (₹${winner.price_per_person} each)</div>
+        <button class="claim-btn" data-place="${winner.place_id}" data-item="${winner.item_id}" data-amount="${winner.expected_amount}" style="width: 100%; background: var(--win-green); color: #000; box-shadow: 0 4px 0 #0b6b3c;">✅ SELECT THIS MEAL</button>
+      </div>
+    </div>
+  `;
+
+  const claimBtn = $("#results .claim-btn");
+  claimBtn.addEventListener("click", async () => {
+    claimBtn.disabled = true;
+    claimBtn.textContent = "Selecting...";
+    const activeProfile = $("#profile-select").value;
+    const who = activeProfile === "all" ? "MegaTron" : activeProfile;
+    try {
+      await fetch(API + "/api/history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          place_id: claimBtn.dataset.place,
+          item_id: claimBtn.dataset.item,
+          people: people,
+          amount: parseFloat(claimBtn.dataset.amount),
+          budget: parseFloat($("#in-budget").value) || 0.0,
+          who: who
+        })
+      });
+      claimBtn.textContent = "🍽️ SELECTED!";
+      claimBtn.classList.add("claimed");
+      if (window.confetti) { confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } }); }
+
+      setTimeout(() => {
+        const resultsDiv = $("#results");
+        resultsDiv.style.transition = "opacity 0.6s ease";
+        resultsDiv.style.opacity = "0";
+        setTimeout(() => {
+          resultsDiv.innerHTML = "";
+          resultsDiv.style.opacity = "1";
+        }, 600);
+      }, 1200);
+    } catch (e) {
+      claimBtn.textContent = "Failed, tap to retry";
+      claimBtn.disabled = false;
+    }
+  });
+}
+
+// Profile management logic
+
+function initProfiles() {
+  const stored = localStorage.getItem("ekvs_profiles");
+  if (stored) {
+    try {
+      userProfiles = JSON.parse(stored);
+    } catch(e) {
+      userProfiles = ["MegaTron"];
+    }
+  } else {
+    localStorage.setItem("ekvs_profiles", JSON.stringify(userProfiles));
+  }
+  
+  const select = $("#profile-select");
+  const active = localStorage.getItem("ekvs_active_profile") || "all";
+  
+  select.innerHTML = `<option value="all">All Profiles</option>` + 
+    userProfiles.map(p => `<option value="${p}">${p}</option>`).join("");
+    
+  select.value = active;
+}
+
+$("#profile-select").addEventListener("change", (e) => {
+  localStorage.setItem("ekvs_active_profile", e.target.value);
+  loadHistory();
+});
+
+$("#btn-add-profile").addEventListener("click", async () => {
+  const newName = await Modal.prompt("Enter new profile name:", "", "Add Profile");
+  if (!newName) return;
+  const cleaned = newName.trim();
+  if (!cleaned) return;
+  if (userProfiles.includes(cleaned)) {
+    await Modal.alert("Profile name already exists!");
+    return;
+  }
+  userProfiles.push(cleaned);
+  localStorage.setItem("ekvs_profiles", JSON.stringify(userProfiles));
+  localStorage.setItem("ekvs_active_profile", cleaned);
+  initProfiles();
+  loadHistory();
+});
+
+// ---------------- History ----------------
+async function loadHistory(){
+  const r = await fetch(API+"/api/history?days=30");
+  const rows = await r.json();
+  
+  const activeProfile = $("#profile-select").value;
+  let filteredRows = rows;
+  if (activeProfile !== "all") {
+    filteredRows = rows.filter(h => h.who && h.who.toLowerCase() === activeProfile.toLowerCase());
+  }
+  
+  if(filteredRows.length === 0){
+    $("#history-stats").style.display = "none";
+    $("#history-list").innerHTML = `<div class="empty">No meal history for ${activeProfile === "all" ? "any profile" : activeProfile} in the last 30 days. Go select a meal! 🎉</div>`;
+    return;
+  }
+
+  $("#history-stats").style.display = "grid";
+
+  // Calculate total spent
+  const totalSpend = filteredRows.reduce((sum, h) => sum + (h.amount || 0), 0);
+
+  // Calculate favorite restaurant
+  const restaurantCounts = {};
+  filteredRows.forEach(h => {
+    if(h.place_name) restaurantCounts[h.place_name] = (restaurantCounts[h.place_name] || 0) + 1;
+  });
+  let favRestaurant = "—";
+  let maxRestCount = 0;
+  Object.keys(restaurantCounts).forEach(name => {
+    if(restaurantCounts[name] > maxRestCount){
+      maxRestCount = restaurantCounts[name];
+      favRestaurant = name;
+    }
+  });
+
+  // Calculate favorite meal
+  const mealCounts = {};
+  filteredRows.forEach(h => {
+    if(h.item_name) mealCounts[h.item_name] = (mealCounts[h.item_name] || 0) + 1;
+  });
+  let favMeal = "—";
+  let maxMealCount = 0;
+  Object.keys(mealCounts).forEach(name => {
+    if(mealCounts[name] > maxMealCount){
+      maxMealCount = mealCounts[name];
+      favMeal = name;
+    }
+  });
+  if (favMeal.length > 20) {
+    favMeal = favMeal.substring(0, 17) + "...";
+  }
+
+  // Calculate total savings
+  const totalSavings = filteredRows.reduce((sum, h) => {
+    if (h.budget && h.budget > h.amount) {
+      return sum + (h.budget - h.amount);
+    }
+    return sum;
+  }, 0);
+
+  $("#history-stats").innerHTML = `
+    <div style="background: rgba(255,255,255,0.06); border: 2px solid var(--gold); border-radius: 12px; padding: 12px; text-align: center; box-shadow: 0 4px 0 #000;">
+      <div style="font-size: 20px; margin-bottom: 4px;">💳</div>
+      <div style="font-size: 11px; opacity: 0.7; font-weight: 800; letter-spacing: 0.5px;">TOTAL SPENT</div>
+      <div class="display" style="font-size: 18px; color: var(--win-green); margin-top: 2px;">₹${totalSpend.toFixed(0)}</div>
+    </div>
+    <div style="background: rgba(255,255,255,0.06); border: 2px solid var(--gold); border-radius: 12px; padding: 12px; text-align: center; box-shadow: 0 4px 0 #000;">
+      <div style="font-size: 20px; margin-bottom: 4px;">🏪</div>
+      <div style="font-size: 11px; opacity: 0.7; font-weight: 800; letter-spacing: 0.5px;">FAV RESTAURANT</div>
+      <div class="display" style="font-size: 15px; color: var(--gold); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${favRestaurant}</div>
+    </div>
+    <div style="background: rgba(255,255,255,0.06); border: 2px solid var(--gold); border-radius: 12px; padding: 12px; text-align: center; box-shadow: 0 4px 0 #000;">
+      <div style="font-size: 20px; margin-bottom: 4px;">🍽️</div>
+      <div style="font-size: 11px; opacity: 0.7; font-weight: 800; letter-spacing: 0.5px;">FAV MEAL</div>
+      <div class="display" style="font-size: 15px; color: var(--hot-pink); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${favMeal}">${favMeal}</div>
+    </div>
+    <div style="background: rgba(255,255,255,0.06); border: 2px solid var(--gold); border-radius: 12px; padding: 12px; text-align: center; box-shadow: 0 4px 0 #000;">
+      <div style="font-size: 20px; margin-bottom: 4px;">💰</div>
+      <div style="font-size: 11px; opacity: 0.7; font-weight: 800; letter-spacing: 0.5px;">MONTH SAVINGS</div>
+      <div class="display" style="font-size: 18px; color: var(--win-green); margin-top: 2px;">₹${totalSavings.toFixed(0)}</div>
+    </div>
+  `;
+
+  $("#history-list").innerHTML = filteredRows.map(h=>`
+    <div class="history-row" data-history-id="${h.id}">
+      <span>🍽️ ${h.item_name} <span style="opacity:.6;">@ ${h.place_name}</span> <span style="font-size:10px; background:rgba(255,255,255,0.1); border-radius:4px; padding:2px 4px; font-weight:800; color:var(--gold); margin-left:6px;">👤 ${h.who||"MegaTron"}</span></span>
+      <span>
+        <span style="font-weight:800; color:var(--win-green);">₹${h.amount}</span>
+        <span class="date">&nbsp;${new Date(h.eaten_on).toLocaleDateString()}</span>
+        <span class="row-actions">
+          <button class="del-history-btn" title="Delete history entry">🗑️</button>
+        </span>
+      </span>
+    </div>
+  `).join("");
+
+  $all("#history-list .del-history-btn").forEach(btn=>{
+    btn.addEventListener("click", async (e)=>{
+      const row = btn.closest(".history-row");
+      const historyId = row.dataset.historyId;
+      if(!await Modal.confirm("Delete this history entry?")) return;
+      await fetch(`${API}/api/history/${historyId}`, { method: "DELETE" });
+      loadHistory();
+    });
+  });
+}
+</script>
+</body>
+</html>
