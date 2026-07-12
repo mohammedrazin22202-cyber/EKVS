@@ -606,6 +606,8 @@ let expandedPlaces = new Set();
 let userProfiles = ["MegaTron"];
 let currentSuggestions = [];
 let currentSuggestionIndex = 0;
+let restaurantRerollCount = 0;
+let mealRerollCount = 0;
 let pollTimer = null;
 let currentPollCode = null;
 let isPollCreator = false;
@@ -819,6 +821,8 @@ $("#btn-suggest").addEventListener("click", async ()=>{
       }
       currentSuggestions = data.suggestions;
       currentSuggestionIndex = 0;
+      restaurantRerollCount = 0;
+      mealRerollCount = 0;
       renderSuggestionCard(people);
       if(window.confetti){
         confetti({ particleCount: 140, spread: 90, origin: { y: 0.6 } });
@@ -837,6 +841,8 @@ function renderSuggestionCard(people){
     return;
   }
   const s = currentSuggestions[currentSuggestionIndex];
+  const mealLeft = 3 - mealRerollCount;
+  const suggestionLeft = 3 - restaurantRerollCount;
   
   $("#results").innerHTML = `
     <div class="prize-card" style="text-align: center;">
@@ -855,11 +861,15 @@ function renderSuggestionCard(people){
       </div>
       
       <div style="display: flex; gap: 10px; margin-top: 15px;">
-        <button id="btn-reroll-meal" style="flex: 1; background: var(--gold); color: #000; border: 3px solid #000; border-radius: 10px; padding: 10px 16px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 0 #000; font-family: 'Baloo 2', sans-serif; font-size: 15px;">
-          🔄 REROLL MEAL
+        <button id="btn-reroll-meal" 
+                ${mealLeft <= 0 ? "disabled" : ""} 
+                style="flex: 1; background: var(--gold); color: #000; border: 3px solid #000; border-radius: 10px; padding: 10px 16px; font-weight: 800; cursor: ${mealLeft <= 0 ? "not-allowed" : "pointer"}; box-shadow: ${mealLeft <= 0 ? "none" : "0 4px 0 #000"}; font-family: 'Baloo 2', sans-serif; font-size: 15px; opacity: ${mealLeft <= 0 ? "0.5" : "1"};">
+          🔄 REROLL MEAL (${mealLeft} left)
         </button>
-        <button id="btn-reroll-suggestion" style="flex: 1; background: var(--deep-purple-2); color: white; border: 3px solid #000; border-radius: 10px; padding: 10px 16px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 0 #000; font-family: 'Baloo 2', sans-serif; font-size: 15px;">
-          🔄 REROLL RESTAURANT
+        <button id="btn-reroll-suggestion" 
+                ${suggestionLeft <= 0 ? "disabled" : ""} 
+                style="flex: 1; background: var(--deep-purple-2); color: white; border: 3px solid #000; border-radius: 10px; padding: 10px 16px; font-weight: 800; cursor: ${suggestionLeft <= 0 ? "not-allowed" : "pointer"}; box-shadow: ${suggestionLeft <= 0 ? "none" : "0 4px 0 #000"}; font-family: 'Baloo 2', sans-serif; font-size: 15px; opacity: ${suggestionLeft <= 0 ? "0.5" : "1"};">
+          🔄 REROLL RESTAURANT (${suggestionLeft} left)
         </button>
       </div>
     </div>
@@ -878,33 +888,47 @@ function renderSuggestionCard(people){
   // Wire up reroll restaurant (finds next suggestion with a different place_id)
   const rerollBtn = $("#btn-reroll-suggestion");
   rerollBtn.addEventListener("click", () => {
+    if (restaurantRerollCount >= 3) return;
     const currentPlaceId = currentSuggestions[currentSuggestionIndex].place_id;
     let nextIdx = (currentSuggestionIndex + 1) % currentSuggestions.length;
     while (currentSuggestions[nextIdx].place_id === currentPlaceId && nextIdx !== currentSuggestionIndex) {
       nextIdx = (nextIdx + 1) % currentSuggestions.length;
     }
+    if (nextIdx === currentSuggestionIndex) {
+      Modal.alert("No other restaurants found in the suggestion list!");
+      return;
+    }
     currentSuggestionIndex = nextIdx;
+    restaurantRerollCount++;
+    mealRerollCount = 0; // Reset meal reroll count when restaurant changes!
     renderSuggestionCard(people);
   });
 
   // Wire up reroll meal (finds next suggestion with the same place_id but different item_id)
   const rerollMealBtn = $("#btn-reroll-meal");
   rerollMealBtn.addEventListener("click", async () => {
+    if (mealRerollCount >= 3) return;
     const currentPlaceId = currentSuggestions[currentSuggestionIndex].place_id;
     const currentItemId = currentSuggestions[currentSuggestionIndex].item_id;
     let nextIdx = (currentSuggestionIndex + 1) % currentSuggestions.length;
+    let found = false;
     while (nextIdx !== currentSuggestionIndex) {
       const cand = currentSuggestions[nextIdx];
       if (cand.place_id === currentPlaceId && cand.item_id !== currentItemId) {
         currentSuggestionIndex = nextIdx;
-        renderSuggestionCard(people);
-        $("#item-details-container").style.display = "block";
-        $("#click-prompt").textContent = "👆 Click restaurant name to hide details";
-        return;
+        found = true;
+        break;
       }
       nextIdx = (nextIdx + 1) % currentSuggestions.length;
     }
-    await Modal.alert("No other meal combinations fit your budget at this restaurant!");
+    if (!found) {
+      await Modal.alert("No other meal combinations fit your budget at this restaurant!");
+      return;
+    }
+    mealRerollCount++;
+    renderSuggestionCard(people);
+    $("#item-details-container").style.display = "block";
+    $("#click-prompt").textContent = "👆 Click restaurant name to hide details";
   });
 
   // Wire up select
