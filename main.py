@@ -198,26 +198,43 @@ def delete_history_entry(history_id: str):
 
 @app.post("/api/history")
 def add_history(entry: HistoryIn):
-    with db.get_conn() as conn:
-        place = conn.execute("SELECT name FROM places WHERE id=?", (entry.place_id,)).fetchone()
-        if not place:
-            raise HTTPException(404, "Place not found")
+    if entry.place_id == "custom" and entry.item_id == "custom":
+        # Check weekly limit (once in the last 7 days per profile)
+        from datetime import timedelta
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+        who_val = entry.who or db.DEVICE_OWNER
+        with db.get_conn() as conn:
+            cnt = conn.execute(
+                "SELECT COUNT(*) as c FROM history WHERE place_id = 'custom' AND who = ? AND eaten_on >= ? AND deleted = 0",
+                (who_val, cutoff)
+            ).fetchone()["c"]
+            if cnt > 0:
+                raise HTTPException(400, "You can only register one custom meal per week!")
         
-        # Support comma-separated item IDs (e.g. from combos)
-        item_ids = entry.item_id.split(",") if entry.item_id else []
-        item_names = []
-        for iid in item_ids:
-            item_row = conn.execute("SELECT name FROM items WHERE id=?", (iid,)).fetchone()
-            if item_row:
-                item_names.append(item_row["name"])
-        
-        if not item_names:
-            raise HTTPException(404, "Items not found")
+        place_name = entry.place_name or "Custom Restaurant"
+        formatted_name = entry.item_name or "Custom Meal"
+    else:
+        with db.get_conn() as conn:
+            place = conn.execute("SELECT name FROM places WHERE id=?", (entry.place_id,)).fetchone()
+            if not place:
+                raise HTTPException(404, "Place not found")
             
-        # Format combined item name, e.g. "2x Chicken Puff + 1x Falooda"
-        from collections import Counter
-        counts = Counter(item_names)
-        formatted_name = " + ".join(f"{count}x {name}" if count > 1 else name for name, count in counts.items())
+            # Support comma-separated item IDs (e.g. from combos)
+            item_ids = entry.item_id.split(",") if entry.item_id else []
+            item_names = []
+            for iid in item_ids:
+                item_row = conn.execute("SELECT name FROM items WHERE id=?", (iid,)).fetchone()
+                if item_row:
+                    item_names.append(item_row["name"])
+            
+            if not item_names:
+                raise HTTPException(404, "Items not found")
+                
+            # Format combined item name, e.g. "2x Chicken Puff + 1x Falooda"
+            from collections import Counter
+            counts = Counter(item_names)
+            formatted_name = " + ".join(f"{count}x {name}" if count > 1 else name for name, count in counts.items())
+            place_name = place["name"]
 
     hid = db.new_id()
     ts = db.now_iso()
@@ -226,7 +243,7 @@ def add_history(entry: HistoryIn):
         conn.execute(
             """INSERT INTO history (id, place_id, place_name, item_id, item_name, people, amount, who, eaten_on, created_at, synced, budget)
                VALUES (?,?,?,?,?,?,?,?,?,?,0,?)""",
-            (hid, entry.place_id, place["name"], entry.item_id, formatted_name,
+            (hid, entry.place_id, place_name, entry.item_id, formatted_name,
              entry.people, entry.amount, entry.who or db.DEVICE_OWNER, eaten_on, ts, entry.budget or 0.0),
         )
     db.try_push_single("history", "history", hid)

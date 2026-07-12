@@ -53,6 +53,8 @@ class HistoryIn(BaseModel):
     who: Optional[str] = ""
     eaten_on: Optional[str] = None   # ISO date, defaults to now
     budget: Optional[float] = 0.0
+    place_name: Optional[str] = ""
+    item_name: Optional[str] = ""
 
 
 class PollCreateRequest(BaseModel):

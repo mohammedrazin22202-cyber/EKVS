@@ -580,6 +580,11 @@
       gap: 12px;
       margin-bottom: 20px;
     "></div>
+    <div style="text-align: right; margin-bottom: 20px;">
+      <button id="btn-open-custom-meal" class="claim-btn" style="background: var(--hot-pink); color: #fff; margin-top: 0; box-shadow: 0 4px 0 #8c0a4d; font-weight: 800;">
+        ➕ REGISTER CUSTOM MEAL
+      </button>
+    </div>
     <div id="history-list"></div>
   </section>
 
@@ -592,7 +597,7 @@
   top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(22, 4, 36, 0.85);
   backdrop-filter: blur(4px);
-  z-index: 1000;
+  z-index: 2000;
   justify-content: center;
   align-items: center;
   padding: 16px;
@@ -658,6 +663,46 @@
     <div style="display: flex; gap: 12px; justify-content: flex-end;">
       <button id="edit-item-btn-cancel" class="claim-btn" style="background: var(--prize-red); color: #fff; margin-top: 0; box-shadow: 0 3px 0 #8c0012; font-weight: 800;">Cancel</button>
       <button id="edit-item-btn-save" class="claim-btn" style="background: var(--win-green); color: #000; margin-top: 0; box-shadow: 0 3px 0 #0b6b3c; font-weight: 800;">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Meal Modal Dialog -->
+<div id="custom-meal-modal" style="
+  display: none;
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(22, 4, 36, 0.85);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+">
+  <div class="ticket" style="
+    max-width: 400px;
+    width: 100%;
+    margin-bottom: 0;
+    box-shadow: 0 8px 0 #000, 0 8px 24px rgba(0,0,0,.6);
+  ">
+    <h3 class="display" style="margin:0 0 10px; font-size:22px; color: var(--hot-pink);">Register Custom Meal</h3>
+    <p style="font-size: 12px; font-weight: 700; opacity: 0.7; margin-bottom: 15px; color: var(--prize-red);">⚠️ Limit: Once per week only.</p>
+
+    <label>🏪 Restaurant Name</label>
+    <input type="text" id="custom-meal-place" placeholder="e.g. Street Vendor, Mom's Kitchen" style="width: 100%; margin-bottom: 12px;" />
+
+    <label>🍔 Meal Name / Description</label>
+    <input type="text" id="custom-meal-item" placeholder="e.g. Masala Dosa, Home Cooked Rice" style="width: 100%; margin-bottom: 12px;" />
+
+    <label>👥 Number of People</label>
+    <input type="number" id="custom-meal-people" value="1" min="1" style="width: 100%; margin-bottom: 12px;" />
+
+    <label>💰 Total Cost / Amount</label>
+    <input type="number" id="custom-meal-amount" placeholder="e.g. 150" min="0" style="width: 100%; margin-bottom: 20px;" />
+    
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <button id="custom-meal-btn-cancel" class="claim-btn" style="background: var(--prize-red); color: #fff; margin-top: 0; box-shadow: 0 3px 0 #8c0012; font-weight: 800;">Cancel</button>
+      <button id="custom-meal-btn-save" class="claim-btn" style="background: var(--win-green); color: #000; margin-top: 0; box-shadow: 0 3px 0 #0b6b3c; font-weight: 800;">Register</button>
     </div>
   </div>
 </div>
@@ -880,6 +925,77 @@ $("#edit-item-btn-save").addEventListener("click", () => {
   EditItemModal.hide();
   if(EditItemModal.resolve) {
     EditItemModal.resolve({ name, price, category, tags });
+  }
+});
+
+// Custom Meal Modal Logic
+const CustomMealModal = {
+  el: $("#custom-meal-modal"),
+  placeInput: $("#custom-meal-place"),
+  itemInput: $("#custom-meal-item"),
+  peopleInput: $("#custom-meal-people"),
+  amountInput: $("#custom-meal-amount"),
+
+  show() {
+    this.placeInput.value = "";
+    this.itemInput.value = "";
+    this.peopleInput.value = "1";
+    this.amountInput.value = "";
+    this.el.style.display = "flex";
+  },
+  hide() {
+    this.el.style.display = "none";
+  }
+};
+
+$("#btn-open-custom-meal").addEventListener("click", () => {
+  CustomMealModal.show();
+});
+
+$("#custom-meal-btn-cancel").addEventListener("click", () => {
+  CustomMealModal.hide();
+});
+
+$("#custom-meal-btn-save").addEventListener("click", async () => {
+  const placeName = CustomMealModal.placeInput.value.trim();
+  const itemName = CustomMealModal.itemInput.value.trim();
+  const people = parseInt(CustomMealModal.peopleInput.value);
+  const amount = parseFloat(CustomMealModal.amountInput.value);
+
+  if(!placeName || !itemName || isNaN(people) || isNaN(amount)){
+    Modal.alert("Please fill in all fields!");
+    return;
+  }
+
+  const activeProfile = $("#profile-select").value;
+  const who = activeProfile === "all" ? "MegaTron" : activeProfile;
+
+  try {
+    const response = await fetch(API + "/api/history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        place_id: "custom",
+        item_id: "custom",
+        place_name: placeName,
+        item_name: itemName,
+        people: people,
+        amount: amount,
+        who: who
+      })
+    });
+    
+    const data = await response.json();
+    if (!response.ok) {
+      Modal.alert(data.detail || "Failed to register custom meal.");
+      return;
+    }
+    
+    CustomMealModal.hide();
+    loadHistory();
+    Modal.alert("Custom meal registered successfully! 🎉");
+  } catch (err) {
+    Modal.alert("Error connecting to server.");
   }
 });
 
@@ -1882,18 +1998,23 @@ async function loadHistory(){
     </div>
   `;
 
-  $("#history-list").innerHTML = filteredRows.map(h=>`
-    <div class="history-row" data-history-id="${h.id}">
-      <span>🍽️ ${h.item_name} <span style="opacity:.6;">@ ${h.place_name}</span> <span style="font-size:10px; background:rgba(255,255,255,0.1); border-radius:4px; padding:2px 4px; font-weight:800; color:var(--gold); margin-left:6px;">👤 ${h.who||"MegaTron"}</span></span>
-      <span>
-        <span style="font-weight:800; color:var(--win-green);">₹${h.amount}</span>
-        <span class="date">&nbsp;${new Date(h.eaten_on).toLocaleDateString()}</span>
-        <span class="row-actions">
-          <button class="del-history-btn" title="Delete history entry">🗑️</button>
+  $("#history-list").innerHTML = filteredRows.map(h=>{
+    const isCustom = h.place_id === "custom";
+    const borderStyle = isCustom ? "border-left: 4px solid var(--hot-pink);" : "border-left: 4px solid var(--win-green);";
+    const customBadge = isCustom ? `<span style="font-size:10px; background:var(--hot-pink); border-radius:4px; padding:2px 4px; font-weight:800; color:#fff; margin-left:6px;">🛠️ CUSTOM</span>` : "";
+    return `
+      <div class="history-row" data-history-id="${h.id}" style="${borderStyle}">
+        <span>🍽️ ${h.item_name} <span style="opacity:.6;">@ ${h.place_name}</span> ${customBadge} <span style="font-size:10px; background:rgba(255,255,255,0.1); border-radius:4px; padding:2px 4px; font-weight:800; color:var(--gold); margin-left:6px;">👤 ${h.who||"MegaTron"}</span></span>
+        <span>
+          <span style="font-weight:800; color:var(--win-green);">₹${h.amount}</span>
+          <span class="date">&nbsp;${new Date(h.eaten_on).toLocaleDateString()}</span>
+          <span class="row-actions">
+            <button class="del-history-btn" title="Delete history entry">🗑️</button>
+          </span>
         </span>
-      </span>
-    </div>
-  `).join("");
+      </div>
+    `;
+  }).join("");
 
   $all("#history-list .del-history-btn").forEach(btn=>{
     btn.addEventListener("click", async (e)=>{
