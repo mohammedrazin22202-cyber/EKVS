@@ -210,23 +210,86 @@
     background:linear-gradient(180deg, var(--gold), var(--gold-dark));
     border:4px solid #000;
     border-radius:14px;
-    box-shadow:0 6px 0 #7a5200;
+    box-shadow:0 6px 0 #000;
     cursor:pointer;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
   }
-  .big-cta:active{ transform:translateY(4px); box-shadow:0 2px 0 #7a5200; }
+  .big-cta:hover:not(:disabled){ transform:translateY(-3px); box-shadow:0 9px 0 #000; }
+  .big-cta:active:not(:disabled){ transform:translateY(3px); box-shadow:0 3px 0 #000; }
   .big-cta:disabled{ opacity:.6; cursor:wait; }
 
-  /* ---------- Wheel spin loading ---------- */
-  .spin-wrap{ text-align:center; margin:26px 0; display:none; }
-  .spin-wrap.show{ display:block; }
-  .wheel{
-    width:90px; height:90px; margin:0 auto 10px;
-    border-radius:50%;
-    border:8px solid var(--gold);
-    border-top-color:var(--prize-red);
-    animation: spin 0.7s linear infinite;
+  /* ---------- Slot Machine Spin Animation ---------- */
+  .spinner-wrap {
+    text-align: center;
+    margin: 26px 0;
+    display: none;
+    animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   }
-  @keyframes spin{ to{ transform:rotate(360deg);} }
+  .spinner-wrap.show {
+    display: block;
+  }
+  .slot-machine {
+    background: var(--cream);
+    border: 4px solid #000;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 8px 0 #000;
+    max-width: 320px;
+    margin: 0 auto 15px;
+    position: relative;
+    overflow: hidden;
+  }
+  .slot-machine::before {
+    content: "🎰";
+    font-size: 20px;
+    position: absolute;
+    top: 4px; left: 10px;
+  }
+  .slot-machine::after {
+    content: "🎰";
+    font-size: 20px;
+    position: absolute;
+    top: 4px; right: 10px;
+  }
+  .slot-window {
+    background: #000;
+    border: 3px solid #000;
+    border-radius: 10px;
+    height: 70px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .slot-reel {
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.1s ease-in-out;
+    width: 100%;
+    align-items: center;
+  }
+  .slot-item {
+    height: 70px;
+    line-height: 70px;
+    color: var(--gold);
+    font-family: 'Luckiest Guy', cursive;
+    font-size: 20px;
+    text-shadow: 2px 2px 0 #000;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 90%;
+    flex-shrink: 0;
+  }
+  
+  @keyframes bounceIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.05); }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); opacity: 1; }
+  }
 
   /* ---------- Prize result cards ---------- */
   .prize-card{
@@ -264,9 +327,17 @@
     padding:8px 16px;
     font-weight:800;
     cursor:pointer;
-    box-shadow:0 3px 0 #0b6b3c;
+    box-shadow:0 4px 0 #000;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
   }
-  .claim-btn:active{ transform:translateY(3px); box-shadow:none; }
+  .claim-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #000;
+  }
+  .claim-btn:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #000;
+  }
   .claim-btn.claimed{ background:#999; cursor:default; }
 
   /* ---------- Manage tab ---------- */
@@ -467,8 +538,14 @@
       </div>
 
       <div class="spinner-wrap" id="spin-wrap">
-        <div class="spinner"></div>
-        <div class="display" style="font-size:18px;">Selecting the perfect meal...</div>
+        <div class="slot-machine">
+          <div class="slot-window">
+            <div class="slot-reel" id="slot-reel">
+              <div class="slot-item">🍔 Pizza...</div>
+            </div>
+          </div>
+        </div>
+        <div class="display" style="font-size:18px; font-weight:800; color:var(--cream); text-shadow:2px 2px 0 #000;">🎲 SPINNING THE WHEEL OF MEALS... 🎲</div>
       </div>
     </div>
 
@@ -598,6 +675,86 @@ const API = "";
 
 function $(sel){ return document.querySelector(sel); }
 function $all(sel){ return document.querySelectorAll(sel); }
+
+// Retro Synth Audio FX utility (Synthesized Audio Context)
+const AudioFX = {
+  ctx: null,
+  
+  init() {
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  },
+
+  tick() {
+    this.init();
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(150, this.ctx.currentTime + 0.08);
+    
+    gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+    
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.08);
+  },
+
+  success() {
+    this.init();
+    if (!this.ctx) return;
+    const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
+    notes.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, this.ctx.currentTime + idx * 0.1);
+      
+      gain.gain.setValueAtTime(0.06, this.ctx.currentTime + idx * 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + idx * 0.1 + 0.25);
+      
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      
+      osc.start(this.ctx.currentTime + idx * 0.1);
+      osc.stop(this.ctx.currentTime + idx * 0.1 + 0.3);
+    });
+  },
+
+  click() {
+    this.init();
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(200, this.ctx.currentTime);
+    
+    gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
+    
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.05);
+  }
+};
+
+// Play audio feedback globally on Neobrutalist buttons/links/toggles clicks
+document.addEventListener("click", (e) => {
+  const t = e.target;
+  if (t.tagName === "BUTTON" || t.closest("button") || t.tagName === "A" || t.classList.contains("radio-option") || t.closest(".radio-option")) {
+    AudioFX.click();
+  }
+});
 
 // Global Application State (declared at top to prevent TDZ ReferenceErrors)
 let placesCache = [];
@@ -805,6 +962,38 @@ $("#btn-suggest").addEventListener("click", async ()=>{
   $("#spin-wrap").classList.add("show");
   $("#results").innerHTML = "";
 
+  // Set up slot machine reel items dynamically
+  const reel = $("#slot-reel");
+  const randomItems = [];
+  if (itemsCache && itemsCache.length > 0) {
+    for (let i = 0; i < 15; i++) {
+      const randomIt = itemsCache[Math.floor(Math.random() * itemsCache.length)];
+      randomItems.push(randomIt.name);
+    }
+  } else {
+    randomItems.push("Pizza", "Burger", "Biryani", "Noodles", "Salad", "Tacos");
+  }
+  
+  reel.innerHTML = randomItems.map(name => `<div class="slot-item">🍔 ${name}</div>`).join("");
+  
+  let currentScroll = 0;
+  const itemHeight = 70;
+  const totalDuration = 900;
+  const ticks = randomItems.length - 1;
+  const tickInterval = totalDuration / ticks;
+  
+  let tickCount = 0;
+  const scrollTimer = setInterval(() => {
+    if (tickCount < ticks) {
+      currentScroll -= itemHeight;
+      reel.style.transform = `translateY(${currentScroll}px)`;
+      AudioFX.tick();
+      tickCount++;
+    } else {
+      clearInterval(scrollTimer);
+    }
+  }, tickInterval);
+
   try{
     const r = await fetch(API+"/api/suggest", {
       method:"POST",
@@ -824,6 +1013,9 @@ $("#btn-suggest").addEventListener("click", async ()=>{
       restaurantRerollCount = 0;
       mealRerollCount = 0;
       renderSuggestionCard(people);
+      
+      AudioFX.success();
+      
       if(window.confetti){
         confetti({ particleCount: 140, spread: 90, origin: { y: 0.6 } });
       }
@@ -1631,7 +1823,30 @@ async function loadHistory(){
     return sum;
   }, 0);
 
+  // Calculate Dining Rank/Level
+  const totalClaims = filteredRows.length;
+  let rank = "Hungry Rookie 🥚";
+  let color = "var(--cream)";
+  if (totalClaims >= 16) {
+    rank = "Culinary Legend 👑";
+    color = "var(--gold)";
+  } else if (totalClaims >= 9) {
+    rank = "Food Gladiator 🍖";
+    color = "var(--prize-red)";
+  } else if (totalClaims >= 4) {
+    rank = "Gourmet Seeker 🥗";
+    color = "var(--win-green)";
+  } else if (totalClaims >= 1) {
+    rank = "Active Diner 🐣";
+    color = "var(--hot-pink)";
+  }
+
   $("#history-stats").innerHTML = `
+    <div style="background: rgba(255,255,255,0.06); border: 2px solid var(--gold); border-radius: 12px; padding: 12px; text-align: center; box-shadow: 0 4px 0 #000;">
+      <div style="font-size: 20px; margin-bottom: 4px;">🏆</div>
+      <div style="font-size: 11px; opacity: 0.7; font-weight: 800; letter-spacing: 0.5px;">DINING RANK</div>
+      <div class="display" style="font-size: 13px; color: ${color}; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${rank}">${rank}</div>
+    </div>
     <div style="background: rgba(255,255,255,0.06); border: 2px solid var(--gold); border-radius: 12px; padding: 12px; text-align: center; box-shadow: 0 4px 0 #000;">
       <div style="font-size: 20px; margin-bottom: 4px;">💳</div>
       <div style="font-size: 11px; opacity: 0.7; font-weight: 800; letter-spacing: 0.5px;">TOTAL SPENT</div>
@@ -1649,7 +1864,7 @@ async function loadHistory(){
     </div>
     <div style="background: rgba(255,255,255,0.06); border: 2px solid var(--gold); border-radius: 12px; padding: 12px; text-align: center; box-shadow: 0 4px 0 #000;">
       <div style="font-size: 20px; margin-bottom: 4px;">💰</div>
-      <div style="font-size: 11px; opacity: 0.7; font-weight: 800; letter-spacing: 0.5px;">MONTH SAVINGS</div>
+      <div style="font-size: 11px; opacity: 0.7; font-weight: 800; letter-spacing: 0.5px;">SAVINGS</div>
       <div class="display" style="font-size: 18px; color: var(--win-green); margin-top: 2px;">₹${totalSavings.toFixed(0)}</div>
     </div>
   `;
