@@ -543,6 +543,51 @@
   </div>
 </div>
 
+<!-- Edit Item Modal Dialog -->
+<div id="edit-item-modal" style="
+  display: none;
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(22, 4, 36, 0.85);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+">
+  <div class="ticket" style="
+    max-width: 400px;
+    width: 100%;
+    margin-bottom: 0;
+    box-shadow: 0 8px 0 #000, 0 8px 24px rgba(0,0,0,.6);
+  ">
+    <h3 class="display" style="margin:0 0 10px; font-size:22px; color: var(--hot-pink);">Edit Food Item</h3>
+    
+    <label>🍔 Item Name</label>
+    <input type="text" id="edit-item-name" style="width: 100%; margin-bottom: 12px;" />
+
+    <label>💰 Price</label>
+    <input type="number" id="edit-item-price" style="width: 100%; margin-bottom: 12px;" />
+
+    <label>🥗 Category</label>
+    <select id="edit-item-cat" style="width: 100%; margin-bottom: 12px;">
+      <option value="veg">Veg</option>
+      <option value="non-veg">Non-Veg</option>
+      <option value="egg">Egg</option>
+      <option value="dessert">Dessert</option>
+      <option value="drink">Drink</option>
+    </select>
+
+    <label>🏷️ Tags</label>
+    <input type="text" id="edit-item-tags" placeholder="e.g. spicy, rice, south indian" style="width: 100%; margin-bottom: 20px;" />
+    
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <button id="edit-item-btn-cancel" class="claim-btn" style="background: var(--prize-red); color: #fff; margin-top: 0; box-shadow: 0 3px 0 #8c0012; font-weight: 800;">Cancel</button>
+      <button id="edit-item-btn-save" class="claim-btn" style="background: var(--win-green); color: #000; margin-top: 0; box-shadow: 0 3px 0 #0b6b3c; font-weight: 800;">Save</button>
+    </div>
+  </div>
+</div>
+
 <div class="status-pill" style="display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
   <span id="status-pill">checking sync...</span>
   <span id="btn-manual-sync" style="cursor: pointer; font-size: 14px;" title="Sync database now">🔄</span>
@@ -556,6 +601,7 @@ function $all(sel){ return document.querySelectorAll(sel); }
 
 // Global Application State (declared at top to prevent TDZ ReferenceErrors)
 let placesCache = [];
+let itemsCache = [];
 let expandedPlaces = new Set();
 let userProfiles = ["MegaTron"];
 let currentSuggestions = [];
@@ -631,6 +677,54 @@ $("#modal-btn-ok").addEventListener("click", () => {
 });
 $("#modal-btn-cancel").addEventListener("click", () => {
   if(Modal.resolve) Modal.resolve(false);
+});
+
+// Edit Item Modal logic
+const EditItemModal = {
+  el: $("#edit-item-modal"),
+  name: $("#edit-item-name"),
+  price: $("#edit-item-price"),
+  cat: $("#edit-item-cat"),
+  tags: $("#edit-item-tags"),
+  btnCancel: $("#edit-item-btn-cancel"),
+  btnSave: $("#edit-item-btn-save"),
+  resolve: null,
+
+  show(item) {
+    this.name.value = item.name || "";
+    this.price.value = item.price || "";
+    this.cat.value = item.category || "veg";
+    this.tags.value = item.tags || "";
+    this.el.style.display = "flex";
+    return new Promise((resolve) => {
+      this.resolve = resolve;
+    });
+  },
+  hide() {
+    this.el.style.display = "none";
+  }
+};
+
+$("#edit-item-btn-cancel").addEventListener("click", () => {
+  EditItemModal.hide();
+  if(EditItemModal.resolve) EditItemModal.resolve(null);
+});
+
+$("#edit-item-btn-save").addEventListener("click", () => {
+  const name = EditItemModal.name.value.trim();
+  const price = parseFloat(EditItemModal.price.value);
+  const category = EditItemModal.cat.value;
+  const tags = EditItemModal.tags.value.trim();
+
+  if(!name || isNaN(price)){
+    Modal.alert("Name and Price are required!");
+    return;
+  }
+
+  EditItemModal.hide();
+  if(EditItemModal.resolve) {
+    EditItemModal.resolve({ name, price, category, tags });
+  }
 });
 
 // ---------------- Tabs ----------------
@@ -882,6 +976,7 @@ async function loadPlaces(){
   placesCache = await r.json();
   const itemsR = await fetch(API+"/api/items");
   const allItems = await itemsR.json();
+  itemsCache = allItems;
 
   populateAreas();
 
@@ -1014,12 +1109,15 @@ async function loadPlaces(){
 
       row.querySelector(".edit-item-btn").addEventListener("click", async (e)=>{
         e.stopPropagation();
-        const currentPrice = row.querySelector(".price").textContent.replace("₹", "").trim();
-        const newPrice = await Modal.prompt("New price?", currentPrice);
-        if(newPrice === null || newPrice === "") return;
+        const item = itemsCache.find(it => it.id === itemId);
+        if(!item) return;
+
+        const updated = await EditItemModal.show(item);
+        if(!updated) return;
+
         await fetch(`${API}/api/items/${itemId}`, {
           method:"PUT", headers:{"Content-Type":"application/json"},
-          body: JSON.stringify({price: parseFloat(newPrice)})
+          body: JSON.stringify(updated)
         });
         loadPlaces();
       });
