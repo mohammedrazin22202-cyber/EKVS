@@ -143,6 +143,62 @@
   }
   textarea{ min-height:60px; resize:vertical; }
 
+  /* ---------- Concurrency Control Radio Styling ---------- */
+  .radio-group {
+    display: flex;
+    gap: 12px;
+  }
+  .radio-option {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #fff;
+    border: 3px solid #000;
+    border-radius: 10px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 800;
+    font-size: 15px;
+    transition: all 0.2s ease;
+    user-select: none;
+    margin: 0 !important;
+  }
+  .radio-option input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 3px solid #000;
+    border-radius: 50%;
+    background: #fff;
+    outline: none;
+    position: relative;
+    cursor: pointer;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .radio-option input[type="radio"]:checked::after {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--gold-dark);
+  }
+  .radio-option:has(input[type="radio"]:checked) {
+    background: var(--gold);
+    box-shadow: 0 4px 0 #000;
+    transform: translateY(-2px);
+  }
+  .radio-option:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 0 #000;
+  }
+
   .big-cta{
     width:100%;
     margin-top:20px;
@@ -362,6 +418,18 @@
           cursor: pointer;
         " />
         <span style="font-size: 12px; font-weight: 800; opacity: 0.7;">Wild 🦁</span>
+      </div>
+
+      <label>🔀 Concurrency Control (7-day restaurant cool-off)</label>
+      <div class="radio-group" style="margin: 5px 0 15px;">
+        <label class="radio-option">
+          <input type="radio" name="concurrency_control" value="on" checked />
+          <span>On 🛡️</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="concurrency_control" value="off" />
+          <span>Off 🔓</span>
+        </label>
       </div>
 
       <label>✏️ Additional Info</label>
@@ -630,6 +698,7 @@ $("#btn-suggest").addEventListener("click", async ()=>{
   const variety = parseInt($("#in-variety").value);
   const activeProfile = $("#profile-select").value;
   const who = activeProfile === "all" ? "" : activeProfile;
+  const concurrency_control = $('input[name="concurrency_control"]:checked').value === "on";
 
   if(!budget || !people){
     await Modal.alert("Enter budget and number of people first!");
@@ -644,7 +713,7 @@ $("#btn-suggest").addEventListener("click", async ()=>{
     const r = await fetch(API+"/api/suggest", {
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({budget, people, preference, additional_info, area, variety, who, count:40})
+      body: JSON.stringify({budget, people, preference, additional_info, area, variety, who, concurrency_control, count:40})
     });
     const data = await r.json();
     setTimeout(()=>{
@@ -1048,6 +1117,7 @@ async function createGroupPoll(){
   const additional_info = $("#in-notes").value;
   const area = $("#in-area").value;
   const variety = parseInt($("#in-variety").value);
+  const concurrency_control = $('input[name="concurrency_control"]:checked').value === "on";
 
   if(!budget || !people){
     await Modal.alert("Enter budget and number of people first!");
@@ -1061,7 +1131,7 @@ async function createGroupPoll(){
     const r = await fetch(API+"/api/polls", {
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({budget, people, preference, additional_info, area, variety})
+      body: JSON.stringify({budget, people, preference, additional_info, area, variety, concurrency_control})
     });
     const data = await r.json();
     if(!r.ok){

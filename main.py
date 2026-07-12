@@ -163,6 +163,7 @@ def suggest(req: SuggestRequest):
         variety=req.variety if req.variety is not None else 1,
         who=req.who or "",
         count=req.count,
+        concurrency_control=req.concurrency_control,
     )
     if not results:
         raise HTTPException(404, "Nothing fits that budget for that many people. Try raising the budget.")
@@ -276,7 +277,8 @@ def create_poll(req: PollCreateRequest):
         area=req.area,
         variety=req.variety if req.variety is not None else 1,
         who="",
-        count=3
+        count=3,
+        concurrency_control=req.concurrency_control,
     )
     if not candidates:
         raise HTTPException(404, "No menu items fit this budget to generate poll candidates.")

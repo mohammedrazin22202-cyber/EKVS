@@ -36,12 +36,32 @@ def _recent_eaten_map(days=30, who=""):
     return out
 
 
-def generate_suggestions(budget: float, people: int, preference: str = "", additional_info: str = "", area: str = "", variety: int = 1, who: str = "", count: int = 3):
+def _recent_places(days=7, who=""):
+    """Return set of place_ids eaten in the last `days` days."""
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    out = set()
+    
+    query = "SELECT DISTINCT place_id FROM history WHERE eaten_on >= ? AND deleted = 0"
+    params = [cutoff]
+    if who and who.lower() != "all":
+        query += " AND who = ?"
+        params.append(who)
+
+    with get_conn() as conn:
+        rows = conn.execute(query, tuple(params)).fetchall()
+        for r in rows:
+            if r["place_id"]:
+                out.add(r["place_id"])
+    return out
+
+
+def generate_suggestions(budget: float, people: int, preference: str = "", additional_info: str = "", area: str = "", variety: int = 1, who: str = "", count: int = 3, concurrency_control: bool = True):
     preference = (preference or "").strip().lower()
     additional_info = (additional_info or "").strip().lower()
     keywords = [w for w in additional_info.replace(",", " ").split() if len(w) > 2]
 
     recent = _recent_eaten_map(30, who)
+    recently_eaten_places = _recent_places(7, who) if concurrency_control else set()
 
     with get_conn() as conn:
         rows = conn.execute(
@@ -67,6 +87,8 @@ def generate_suggestions(budget: float, people: int, preference: str = "", addit
 
     candidates = []
     for place_id, items in place_items.items():
+        if concurrency_control and place_id in recently_eaten_places:
+            continue
         # Sort items by price to keep cheaper items first in combination ordering
         items = sorted(items, key=lambda x: x["price"])
         

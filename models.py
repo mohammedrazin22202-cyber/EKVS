@@ -42,6 +42,7 @@ class SuggestRequest(BaseModel):
     variety: Optional[int] = 1          # 0 = Safe, 1 = Regular, 2 = Wild
     who: Optional[str] = ""
     count: int = 3
+    concurrency_control: bool = True
 
 
 class HistoryIn(BaseModel):
@@ -61,6 +62,7 @@ class PollCreateRequest(BaseModel):
     additional_info: Optional[str] = ""
     area: Optional[str] = ""
     variety: Optional[int] = 1
+    concurrency_control: bool = True
 
 
 class VoteRequest(BaseModel):
