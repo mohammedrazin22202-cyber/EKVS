@@ -258,9 +258,6 @@
     height: 70px;
     overflow: hidden;
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
   .slot-reel {
     display: flex;
@@ -274,7 +271,7 @@
     line-height: 70px;
     color: var(--gold);
     font-family: 'Luckiest Guy', cursive;
-    font-size: 20px;
+    font-size: 22px;
     text-shadow: 2px 2px 0 #000;
     text-align: center;
     white-space: nowrap;
@@ -962,37 +959,11 @@ $("#btn-suggest").addEventListener("click", async ()=>{
   $("#spin-wrap").classList.add("show");
   $("#results").innerHTML = "";
 
-  // Set up slot machine reel items dynamically
   const reel = $("#slot-reel");
-  const randomItems = [];
-  if (itemsCache && itemsCache.length > 0) {
-    for (let i = 0; i < 15; i++) {
-      const randomIt = itemsCache[Math.floor(Math.random() * itemsCache.length)];
-      randomItems.push(randomIt.name);
-    }
-  } else {
-    randomItems.push("Pizza", "Burger", "Biryani", "Noodles", "Salad", "Tacos");
-  }
-  
-  reel.innerHTML = randomItems.map(name => `<div class="slot-item">🍔 ${name}</div>`).join("");
-  
-  let currentScroll = 0;
-  const itemHeight = 70;
-  const totalDuration = 900;
-  const ticks = randomItems.length - 1;
-  const tickInterval = totalDuration / ticks;
-  
-  let tickCount = 0;
-  const scrollTimer = setInterval(() => {
-    if (tickCount < ticks) {
-      currentScroll -= itemHeight;
-      reel.style.transform = `translateY(${currentScroll}px)`;
-      AudioFX.tick();
-      tickCount++;
-    } else {
-      clearInterval(scrollTimer);
-    }
-  }, tickInterval);
+  reel.style.opacity = "1";
+  reel.style.transition = "none";
+  reel.style.transform = "translateY(0px)";
+  reel.innerHTML = '<div class="slot-item">🎲 Contacting kitchen...</div>';
 
   try{
     const r = await fetch(API+"/api/suggest", {
@@ -1001,25 +972,67 @@ $("#btn-suggest").addEventListener("click", async ()=>{
       body: JSON.stringify({budget, people, preference, additional_info, area, variety, who, concurrency_control, count:40})
     });
     const data = await r.json();
-    setTimeout(()=>{
+
+    if(!r.ok){
       $("#spin-wrap").classList.remove("show");
       $("#btn-suggest").disabled = false;
-      if(!r.ok){
-        $("#results").innerHTML = `<div class="empty">😬 ${data.detail || "Something went wrong"}</div>`;
-        return;
+      $("#results").innerHTML = `<div class="empty">😬 ${data.detail || "Something went wrong"}</div>`;
+      return;
+    }
+
+    currentSuggestions = data.suggestions;
+    currentSuggestionIndex = 0;
+    restaurantRerollCount = 0;
+    mealRerollCount = 0;
+
+    const actualMealName = currentSuggestions[0].item_name;
+
+    const randomItems = [];
+    if (itemsCache && itemsCache.length > 0) {
+      for (let i = 0; i < 11; i++) {
+        const randomIt = itemsCache[Math.floor(Math.random() * itemsCache.length)];
+        randomItems.push(randomIt.name);
       }
-      currentSuggestions = data.suggestions;
-      currentSuggestionIndex = 0;
-      restaurantRerollCount = 0;
-      mealRerollCount = 0;
-      renderSuggestionCard(people);
-      
-      AudioFX.success();
-      
-      if(window.confetti){
-        confetti({ particleCount: 140, spread: 90, origin: { y: 0.6 } });
+    } else {
+      randomItems.push("Pizza", "Burger", "Biryani", "Noodles", "Salad", "Tacos", "Pasta", "Sushi", "Waffles", "Ice Cream", "Momos");
+    }
+    randomItems.push(actualMealName);
+
+    reel.innerHTML = randomItems.map(name => `<div class="slot-item">🍔 ${name}</div>`).join("");
+
+    let currentScroll = 0;
+    const itemHeight = 70;
+    const scrollDuration = 2000; 
+    const ticks = randomItems.length - 1;
+    const tickInterval = scrollDuration / ticks;
+    
+    let tickCount = 0;
+    const scrollTimer = setInterval(() => {
+      if (tickCount < ticks) {
+        currentScroll -= itemHeight;
+        reel.style.transform = `translateY(${currentScroll}px)`;
+        AudioFX.tick();
+        tickCount++;
+      } else {
+        clearInterval(scrollTimer);
+        
+        setTimeout(() => {
+          reel.style.transition = "opacity 0.25s ease-out";
+          reel.style.opacity = "0";
+          
+          setTimeout(() => {
+            $("#spin-wrap").classList.remove("show");
+            $("#btn-suggest").disabled = false;
+            renderSuggestionCard(people);
+            AudioFX.success();
+            if(window.confetti){
+              confetti({ particleCount: 140, spread: 90, origin: { y: 0.6 } });
+            }
+          }, 250);
+        }, 400);
       }
-    }, 900);
+    }, tickInterval);
+
   }catch(e){
     $("#spin-wrap").classList.remove("show");
     $("#btn-suggest").disabled = false;
